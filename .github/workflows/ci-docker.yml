@@ -61,16 +61,18 @@ jobs:
           ignore-unfixed: true
           skip-java-db-update: true
 
-      - name: Trivy Image Scan
+      - name: Trivy Image Scan (local Docker image)
         uses: aquasecurity/trivy-action@master
         with:
+          scan-type: "image"
           image-ref: "${{ secrets.DOCKERHUB_USERNAME }}/llmops-e2e:latest"
+          docker-host: "unix:///var/run/docker.sock"
+          scanners: "vuln"
           severity: "HIGH,CRITICAL"
           format: "table"
           output: "trivy-image-report.txt"
           exit-code: "1"
           ignore-unfixed: true
-          skip-java-db-update: true
 
       - name: Tag and Push Image to DockerHub
         run: |
