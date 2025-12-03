@@ -10,14 +10,14 @@ jobs:
   build_scan_push:
     runs-on: ubuntu-latest
 
-    env:
-      TMPDIR: ${{ runner.temp }}/trivy-tmp
-      TRIVY_CACHE_DIR: ${{ runner.temp }}/trivy-cache
-
     steps:
       - name: Prepare large temp dirs for Trivy
         run: |
-          mkdir -p "$TMPDIR" "$TRIVY_CACHE_DIR"
+          mkdir -p "$RUNNER_TEMP/trivy-tmp"
+          mkdir -p "$RUNNER_TEMP/trivy-cache"
+
+          echo "TMPDIR=$RUNNER_TEMP/trivy-tmp" >> $GITHUB_ENV
+          echo "TRIVY_CACHE_DIR=$RUNNER_TEMP/trivy-cache" >> $GITHUB_ENV
 
       - name: Free Disk Space (prevents Trivy failures)
         run: |
