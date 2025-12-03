@@ -1,32 +1,56 @@
 name: CI - Build, Scan, Push Docker Image
- 
+
 on:
   push:
     branches: ["main"]
   pull_request:
     branches: ["main"]
- 
+
 jobs:
   build_scan_push:
     runs-on: ubuntu-latest
- 
+
+    env:
+      TMPDIR: ${{ runner.temp }}/trivy-tmp
+      TRIVY_CACHE_DIR: ${{ runner.temp }}/trivy-cache
+
     steps:
+      - name: Prepare large temp dirs for Trivy
+        run: |
+          mkdir -p "$TMPDIR" "$TRIVY_CACHE_DIR"
+
+      - name: Free Disk Space (prevents Trivy failures)
+        run: |
+          echo "Before cleanup:"
+          df -h
+
+          sudo rm -rf /usr/local/lib/android || true
+          sudo rm -rf /usr/share/dotnet || true
+          sudo rm -rf /opt/ghc || true
+          sudo rm -rf /opt/hostedtoolcache || true
+
+          echo "After cleanup:"
+          df -h
+
       - name: Checkout repository
         uses: actions/checkout@v4
- 
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
- 
+
       - name: DockerHub Login
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_PASSWORD }}
- 
+
       - name: Build Docker Image
         run: |
           docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/llmops-e2e:latest .
- 
+
+      - name: Clean Docker cache before scanning
+        run: docker system prune -af || true
+
       - name: Trivy FS Scan (source code)
         uses: aquasecurity/trivy-action@master
         with:
@@ -35,7 +59,8 @@ jobs:
           output: "trivy-fs-report.txt"
           exit-code: "1"
           ignore-unfixed: true
- 
+          skip-java-db-update: true
+
       - name: Trivy Image Scan
         uses: aquasecurity/trivy-action@master
         with:
@@ -45,20 +70,20 @@ jobs:
           output: "trivy-image-report.txt"
           exit-code: "1"
           ignore-unfixed: true
- 
+          skip-java-db-update: true
+
       - name: Tag and Push Image to DockerHub
         run: |
           IMAGE=${{ secrets.DOCKERHUB_USERNAME }}/llmops-e2e
- 
-          # Tag images
+
           docker tag $IMAGE:latest $IMAGE:${{ github.sha }}
- 
+
           echo "Pushing latest..."
           docker push $IMAGE:latest
- 
+
           echo "Pushing SHA tag..."
           docker push $IMAGE:${{ github.sha }}
- 
+
       - name: Upload Trivy Reports
         uses: actions/upload-artifact@v4
         with:
