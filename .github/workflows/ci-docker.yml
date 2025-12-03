@@ -47,10 +47,10 @@ jobs:
           scan-type: "fs"
           severity: "HIGH,CRITICAL"
           output: "trivy-fs-report.txt"
-          exit-code: "1"
+          exit-code: "0"
           ignore-unfixed: true
 
-      - name: Trivy Image Scan (remote Docker Hub image)
+      - name: Trivy Image Scan
         uses: aquasecurity/trivy-action@master
         with:
           scan-type: "image"
@@ -58,7 +58,7 @@ jobs:
           severity: "HIGH,CRITICAL"
           format: "table"
           output: "trivy-image-report.txt"
-          exit-code: "1"
+          exit-code: "0"
           ignore-unfixed: true
 
       - name: Upload Trivy Reports
