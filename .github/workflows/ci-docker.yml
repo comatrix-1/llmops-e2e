@@ -17,7 +17,7 @@ jobs:
       - name: Free Disk Space
         run: |
           sudo rm -rf /usr/local/lib/android || true
-          sudo rm -rf /usr/share/dotnet || true
+          sudo rm-rf /usr/share/dotnet || true
           sudo rm -rf /opt/ghc || true
           sudo rm -rf /opt/hostedtoolcache || true
 
@@ -68,3 +68,14 @@ jobs:
           path: |
             trivy-fs-report.txt
             trivy-image-report.txt
+
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Deploy to Azure Web App
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: ${{ secrets.AZURE_WEBAPP_NAME }}
+          images: ${{ secrets.DOCKERHUB_USERNAME }}/llmops-e2e:latest
